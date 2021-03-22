@@ -1,13 +1,12 @@
 from pyfakefs.fake_filesystem_unittest import TestCase
-from du_logic import get_dirs, get_files_count, get_ext_sizes, get_size, valid_ext, sort_dirs, convert_bytes, \
-    get_dirs_with_size
-from du import arguments_parsing
+from diskusage import get_dirs, get_files_count, get_ext_sizes, \
+    get_size, valid_ext, get_dirs_with_size, convert_bytes, \
+    sort_dirs, traversal
 
 
 class ExampleTestCase(TestCase):
     def setUp(self):
         self.setUpPyfakefs()
-        self.parser = arguments_parsing()
 
     def test_convert_bytes_kb(self):
         self.assertEqual(convert_bytes(156023), '152.4 KB')
@@ -27,15 +26,15 @@ class ExampleTestCase(TestCase):
     def test_get_dirs(self):
         path1 = '/foo/bar'
         path2 = '/foo/bar/test'
-        path3 = '/foo/bar/test/text.txt'
         path4 = '/foo/bar/another'
+        path5 = '/foo/bar/another/hero'
 
         self.fs.create_dir(path1)
         self.fs.create_dir(path2)
         self.fs.create_dir(path4)
-        self.fs.create_file(path3, contents='test')
+        self.fs.create_dir(path5)
 
-        self.assertEqual(get_dirs('/foo/bar', 3), ['\\foo\\bar\\test', '\\foo\\bar\\another'])
+        self.assertEqual(get_dirs('/foo/bar', 3), ['\\foo\\bar\\test', '\\foo\\bar\\another', '\\foo\\bar\\another\\hero'])
 
     def test_get_files_count(self):
         f = '/foo/bar/text.txt'
@@ -59,47 +58,136 @@ class ExampleTestCase(TestCase):
         self.assertEqual(valid_ext(z), False)
 
     def test_get_ext_sizes(self):
-        _dir = '/foo/bar'
-        f = '/foo/bar/text.txt'
-        s = '/foo/bar/test.md'
-        t = '/foo/bar/finder.cs'
-        d = '/foo/bar/folder.dll'
+        path1 = '/foo/bar'
+        path2 = '/foo/bar/test'
+        path3 = '/foo/bar/test/text.txt'
+        path4 = '/foo/bar/another'
 
-        self.fs.create_dir(_dir)
-        self.fs.create_file(f)
-        self.fs.create_file(s)
-        self.fs.create_file(t)
-        self.fs.create_file(d)
+        self.fs.create_dir(path1)
+        self.fs.create_dir(path2)
+        self.fs.create_dir(path4)
+        self.fs.create_file(path3, contents='tests')
 
-        self.assertEqual(get_ext_sizes('/foo/bar', {}), {'md': 0, 'txt': 0, 'cs': 0, 'dll': 0})
+        self.assertEqual(get_ext_sizes('/foo/bar', {}), {'txt': 5})
 
-    def test_get_size(self):
-        f = 'text.txt'
+    def test_traversal(self):
+        path1 = '/foo/bar'
+        path2 = '/foo/bar/test'
+        path3 = '/foo/bar/test/text.txt'
+        path4 = '/foo/bar/another/man.docx'
 
-        self.fs.create_file(f)
+        self.fs.create_dir(path1)
+        self.fs.create_dir(path2)
+        self.fs.create_dir(path4)
+        self.fs.create_file(path3, contents='tests')
 
-        self.assertEqual(get_size(f), 0)
+        self.assertEqual(traversal(path1, 5), ([('\x1b[96m bar \x1b[0m', '5.0 Bytes'), ('\x1b[96m |--test \x1b[0m', '5.0 Bytes'), ('|  |--text.txt', '5.0 Bytes'), ('\x1b[96m |--another \x1b[0m', '0.0 Bytes'), ('\x1b[96m |  |--man.docx \x1b[0m', '0.0 Bytes')], 14))
 
-    def test_sort_dirs_name(self):
-        f = '/foo/bar'
-        d = '/foo/bar/arc'
-        r = '/foo/bar/bay'
-        w = '/foo/bar/tray'
+    def test_get_ext_sizes_2(self):
+        path1 = '/foo/bar'
+        path2 = '/foo/bar/test'
+        path3 = '/foo/bar/test/text.txt'
+        path5 = '/foo/bar/test/flip.pdf'
+        path4 = '/foo/bar/another'
 
-        self.fs.create_dir(f)
-        self.fs.create_dir(d)
-        self.fs.create_dir(r)
-        self.fs.create_dir(w)
+        self.fs.create_dir(path1)
+        self.fs.create_dir(path2)
+        self.fs.create_dir(path4)
+        self.fs.create_file(path3, contents='tests')
+        self.fs.create_file(path5, contents='brbr')
 
-        self.assertEqual(sort_dirs(get_dirs_with_size(f, False, False), 'name', True), ['\\foo\\bar\\arc', '\\foo\\bar\\bay', '\\foo\\bar\\tray'])
-        self.assertEqual(sort_dirs(get_dirs_with_size(f, False, False), 'name', False), ['\\foo\\bar\\arc', '\\foo\\bar\\bay', '\\foo\\bar\\tray'])
+        self.assertEqual(get_ext_sizes('/foo/bar', {}), {'pdf': 4, 'txt': 5})
 
-    def test_something(self):
-        d = '/foo/bar/t.txt'
+    def test_create_file(self):
+        path1 = '/foo/bar'
+        path2 = '/foo/bar/test'
+        path3 = '/foo/bar/test/text.txt'
+        path4 = '/foo/bar/another'
 
-        self.fs.create_dir(d)
+        self.fs.create_dir(path1)
+        self.fs.create_dir(path2)
+        self.fs.create_dir(path4)
+        self.fs.create_file(path3, contents='tests')
 
-        parsed = self.parser.parse_args([d, '--ext'])
-        self.assertEqual(parsed.ext, 'test')
+        self.assertEqual(get_size(path1), 5)
 
+    def test_get_dirs_with_size(self):
+        path1 = '/foo/bar'
+        path2 = '/foo/bar/test'
+        path3 = '/foo/bar/test/text.txt'
+        path4 = '/foo/bar/another'
 
+        self.fs.create_dir(path1)
+        self.fs.create_dir(path2)
+        self.fs.create_dir(path4)
+        self.fs.create_file(path3, contents='tests')
+
+        self.assertEqual(get_dirs_with_size([path1, path2, path4], False, False),
+                         ([['/foo/bar', 5, 1], ['/foo/bar/test', 5, 1], ['/foo/bar/another', 0, 0]], {}))
+
+    def test_get_dirs_with_size_2(self):
+        path1 = '/foo/bar'
+        path2 = '/foo/bar/test'
+        path3 = '/foo/bar/test/text.txt'
+        path4 = '/foo/bar/another'
+
+        self.fs.create_dir(path1)
+        self.fs.create_dir(path2)
+        self.fs.create_dir(path4)
+        self.fs.create_file(path3, contents='tests')
+
+        self.assertEqual(get_dirs_with_size([path1, path2, path4], False, True),
+                         ([['/foo/bar', 5, 1], ['/foo/bar/test', 5, 1], ['/foo/bar/another', 0, 0]], {'txt': 10}))
+
+    def test_get_dirs_with_size_3(self):
+        path1 = '/foo/bar'
+        path2 = '/foo/bar/test'
+        path3 = '/foo/bar/test/text.txt'
+        path4 = '/foo/bar/another'
+
+        self.fs.create_dir(path1)
+        self.fs.create_dir(path2)
+        self.fs.create_dir(path4)
+        self.fs.create_file(path3, contents='tests')
+
+        self.assertEqual(get_dirs_with_size([path1, path2, path4], True, True),
+                         ([['/foo/bar', 5, 1], ['/foo/bar/test', 5, 1], ['/foo/bar/another', 0, 0]], {'txt': 10}))
+
+    def test_sort_dirs(self):
+        path1 = '/foo/bar'
+        path2 = '/foo/bar/test'
+        path3 = '/foo/bar/test/text.txt'
+        path4 = '/foo/bar/another'
+        path5 = '/foo/bar/another/t.txt'
+        path6 = '/foo/bar/another/b.txt'
+
+        self.fs.create_dir(path1)
+        self.fs.create_dir(path2)
+        self.fs.create_dir(path4)
+        self.fs.create_file(path3, contents='tests')
+        self.fs.create_file(path5, contents='tests')
+        self.fs.create_file(path6, contents='tests')
+
+        self.assertEqual(sort_dirs([path1, path2, path3, path4], 'name', True),
+                         ['/foo/bar', '/foo/bar/test', '/foo/bar/test/text.txt', '/foo/bar/another'])
+
+        self.assertEqual(sort_dirs([path1, path2, path3, path4, path5, path6], 'size', True),
+                         ['/foo/bar',
+                          '/foo/bar/test',
+                          '/foo/bar/test/text.txt',
+                          '/foo/bar/another',
+                          '/foo/bar/another/t.txt',
+                          '/foo/bar/another/b.txt']
+                         )
+
+        self.assertEqual(sort_dirs([path1, path2, path3, path4], 'imya', True),
+                         None)
+
+        self.assertEqual(sort_dirs([path1, path2, path3, path4, path5, path6], 'fls_count', True),
+                         ['/foo/bar',
+                          '/foo/bar/test',
+                          '/foo/bar/test/text.txt',
+                          '/foo/bar/another',
+                          '/foo/bar/another/t.txt',
+                          '/foo/bar/another/b.txt']
+                         )
