@@ -25,7 +25,9 @@ if __name__ == '__main__':
 
     if args.ext:
         res_list = glob(f'{args.base_path}\*.{args.ext}', recursive=True)
-        print(*res_list, convert_bytes(sum(map(getsize, res_list))), sep='\n')
+        print(*res_list, sep='\n')
+        print(f'\nTotal size file with ext {args.ext}\n')
+        print(f'\033[96m{convert_bytes(sum(map(getsize, res_list)))}\033[0m')
         exit()
 
     if args.top == -1:
