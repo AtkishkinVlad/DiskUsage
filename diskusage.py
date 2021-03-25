@@ -4,6 +4,7 @@ from my_progress_bar import ProgressBar
 from fileData import FileData
 from datetime import datetime, timezone, timedelta
 
+
 def convert_bytes(num):
     units = ['B', 'KB', 'MB', 'GB', 'TB']
     for unit in units:
@@ -25,56 +26,18 @@ def get_size(path):
     return total_size
 
 
-def get_files_count(path):
-    total_files = 0
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            file_path = os.path.join(root, file)
-            if os.path.isfile(file_path):
-                total_files += 1
-    return total_files
-
-
-# является ли строка расширением файла
-def valid_ext(ext):
-    for symbol in ext:
-        if not (symbol.isalpha() or symbol.isdigit()):
-            return False
-    return True
-
-
-# заполнить словарь ext_sizes с парами "расширение" : объем для текущей директории
-def get_ext_sizes(path, ext_sizes):
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            file_path = os.path.join(root, file)
-            if os.path.isfile(file_path):
-                try:
-                    ext = file_path.rsplit('.', 1)[1]  # получаем расширение
-                    if valid_ext(ext):
-                        if ext in ext_sizes:  # если расширение уже добавлено в словарь
-                            ext_sizes[ext] += os.path.getsize(file_path)  # прибавляем размер
-                        else:
-                            ext_sizes[ext] = os.path.getsize(file_path)  # иначе добавляем первый
-                except Exception:
-                    raise Exception
-    return ext_sizes
-
-
-# получить список папок директории path
-def get_dirs(path, max_depth):
+def get_all_directories(path, max_depth):
     dirs = []
-    for d in range(1, max_depth + 1):  # для всех уровней заданной глубины
-        depth = "/".join("*" * d)  # список шагов по папкам /*/*/...
-        search_path = os.path.join(path, depth)  # путь, по которому ищем папки - path + шаги по папкам
-        for f in glob.glob(search_path):  # просматриваем текущий каталог
-            if os.path.isdir(f):  # учитываем папки
+    for d in range(1, max_depth + 1):
+        search_path = os.path.join(path, "/".join("*" * d))
+        for f in glob.glob(search_path):
+            if os.path.isdir(f):
                 dirs.append(f)
     return dirs
 
-# супер пупер важная функция
+
 def traversal(path, depth = -1):
-    bar = ProgressBar(len(get_dirs(path, depth)))
+    bar = ProgressBar(len(get_all_directories(path, depth)))
     result = []
     maxlen = 0
     prefix = 0
@@ -89,8 +52,8 @@ def traversal(path, depth = -1):
             continue
         indent = ''
         if level > 0:
-            indent = '|  ' * (level - 1) + '|--'
-        sub_indent = '|  ' * level + '|--'
+            indent = ' |   ' * (level - 1) + ' |---'
+        sub_indent = ' |   ' * level + ' |---'
         taem = datetime.fromtimestamp(os.stat(root).st_mtime, tz=timezone(offset=timedelta(hours=5)))
         fileData = FileData(os.path.basename(root), get_size(root), level, indent, True, taem)
         if len(fileData.name) + len(fileData.indent) + 1 > maxlen:
@@ -116,9 +79,9 @@ def traversal(path, depth = -1):
 
 def sort_dirs(fileList, sort_type, reverse):
     if (sort_type == 'name'):
-        return sorted(fileList, key=lambda i: i.name.lower(), reverse=reverse)  # сортируем по второму параметру - размеру
+        return sorted(fileList, key=lambda i: i.name.lower(), reverse=reverse)
     elif (sort_type == 'size'):
-        return sorted(fileList, key=lambda i: i.size, reverse=not reverse)  # сортируем по названию
+        return sorted(fileList, key=lambda i: i.size, reverse=not reverse)
     elif (sort_type == 'depth'):
         return sorted(fileList, key=lambda i: i.depth, reverse=reverse)
     elif (sort_type == 'modify'):
