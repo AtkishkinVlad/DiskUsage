@@ -1,0 +1,5 @@
+25.03.2021
+    Removed unused functions
+    Removed test files (bc useless)
+    Add todo
+    Folders in tree view are colored now

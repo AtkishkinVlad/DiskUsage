@@ -10,8 +10,8 @@ def arguments_parsing():
     parser.add_argument('--reverse', default=False, action='store_true', help='Reverse sorting')
     parser.add_argument('--ext', default=False, action='store_true', help='Show total file size by extensions')
     parser.add_argument('--noprogress', default=False, action='store_true', help='Not to show processing progress')
-    parser.add_argument('--top', default=-1, type=int, help='top N files')
-    parser.add_argument('--block', default=100, type=int, help='get blocks taking PERCENT of disk space')
+    parser.add_argument('--top', default=-1, type=int, help='Select [VALUE] files from top of list')
+    parser.add_argument('--block', default=100, type=int, help='Get files that consume [VALUE] percents of used space')
     args = parser.parse_args()
     return args
 
@@ -56,4 +56,4 @@ if __name__ == '__main__':
             name = i.name
             if i.isDir:
                 name = f'\033[96m{name}\033[0m'
-            print(i.indent, i.name, ' ' * (maxlen - len(i.name + i.indent)), convert_bytes(i.size), '\t', str(i.time).split('.')[0])
+            print(i.indent, name, ' ' * (maxlen - len(i.name + i.indent)), convert_bytes(i.size), '\t', str(i.time).split('.')[0])
