@@ -11,14 +11,15 @@ def arguments_parsing():
     parser.add_argument('-s', '--sort', type=str, choices=['name', 'size', 'depth', 'none', 'modify'], default='none',
                         help='Type of sorting: name - lexical, size - by size')
     parser.add_argument('-d', '--depth', type=int, default=2, help='Max depth of subdirectories')
-    parser.add_argument('--reverse', default=False, action='store_true', help='Reverse sorting')
-    parser.add_argument('--noprogress', default=False, action='store_true', help='Not to show processing progress')
-    parser.add_argument('--top', default=-1, type=int, help='top element by size')
-    parser.add_argument('--block', default=100, type=int, help='Get files that consume [VALUE] percents of used space')
-    parser.add_argument('--ext', default=False, type=str, help='Get files with necessary size + size')
-    args = parser.parse_args()
+    parser.add_argument('-r', '--reverse', default=False, action='store_true', help='Reverse sorting')
+    parser.add_argument('-n', '--noprogress', default=False, action='store_true',
+                        help='Not to show processing progress')
+    parser.add_argument('-t', '--top', default=-1, type=int, help='top element by size')
+    parser.add_argument('-b', '--block', default=100, type=int, help='Get files that consume [VALUE] percents of used '
+                                                                     'space')
+    parser.add_argument('-e', '--ext', default=False, type=str, help='Get files with necessary size + size')
 
-    return args
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
@@ -44,6 +45,7 @@ if __name__ == '__main__':
         for i in result:
             if i.is_dir:
                 continue
+
             totalSize += i.size
 
         remainingAmount = (totalSize * args.block) // 100
@@ -53,8 +55,10 @@ if __name__ == '__main__':
         for i in result:
             if i.is_dir:
                 continue
+
             output.append(i)
             remainingAmount -= i.size
+
             if remainingAmount <= 0:
                 break
 
@@ -66,6 +70,7 @@ if __name__ == '__main__':
 
     elif args.sort != 'none':
         result = sort_dirs(result, args.sort, args.reverse)
+
         for i in result[:border]:
             name = i.name
             if i.is_dir:
@@ -79,5 +84,6 @@ if __name__ == '__main__':
 
             if i.is_dir:
                 name = f'\033[96m{name}\033[0m'
+
             print(i.indent, name, ' ' * (max_len - len(i.name + i.indent)), convert_bytes(i.size), '\t',
                   str(i.time).split('.')[0])

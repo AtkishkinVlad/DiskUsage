@@ -1,6 +1,6 @@
 from glob import glob
 from os import walk, path, sep, stat, listdir
-from tqdm import trange
+from tqdm import tqdm
 from fileData import FileData
 from datetime import datetime, timezone, timedelta
 
@@ -88,17 +88,16 @@ def traversal(file_path, depth=-1):
 
         for_sort.sort(key=lambda a: a[1])
 
-        for _ in trange(len(for_sort)):
-            for file in for_sort:
-                time = datetime.fromtimestamp(stat(root).st_mtime,
-                                              tz=timezone(offset=timedelta(hours=5)))
+        for file in tqdm(for_sort, colour='green'):
+            time = datetime.fromtimestamp(stat(root).st_mtime,
+                                          tz=timezone(offset=timedelta(hours=5)))
 
-                file_data = FileData(file[0], file[1], level, sub_indent, False, time)
+            file_data = FileData(file[0], file[1], level, sub_indent, False, time)
 
-                if len(file_data.name) + len(file_data.indent) + 1 > max_len:
-                    max_len = len(file_data.name) + len(file_data.indent) + 1
+            if len(file_data.name) + len(file_data.indent) + 1 > max_len:
+                max_len = len(file_data.name) + len(file_data.indent) + 1
 
-                result.append(file_data)
+            result.append(file_data)
 
     return result, max_len
 
